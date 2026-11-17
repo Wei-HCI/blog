@@ -15,7 +15,6 @@ order: 0
 {%- assign total = feed_posts | size -%}
 {%- capture avatar -%}{% include media-url.html src=site.avatar %}{%- endcapture -%}
 {%- assign me = site.social.name | default: site.title -%}
-{%- assign handle = site.github.username | default: 'me' -%}
 
 <style>
   .mb-feed {
@@ -220,6 +219,41 @@ order: 0
   .mb-linkbtn:hover {
     color: var(--mb-accent);
   }
+  .mb-linkbtn[hidden] {
+    display: none;
+  }
+  .mb-gate .mb-gate-note {
+    text-align: left;
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+  .mb-remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--mb-muted);
+    cursor: pointer;
+  }
+
+  /* 登录后：原地编辑某条动态的 Markdown */
+  .mb-editor {
+    margin: 0.3rem 0 0.6rem;
+  }
+  .mb-editor .mb-body-in {
+    min-height: 12rem;
+    font-family: var(--bs-font-monospace, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+    font-size: 0.85rem;
+  }
+  .mb-edit-path {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.75rem;
+    color: var(--mb-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .mb-ava {
     display: block;
@@ -274,22 +308,12 @@ order: 0
     color: var(--heading-color, var(--text-color));
     font-weight: 700;
   }
-  .mb-handle,
   .mb-date {
     color: var(--mb-muted);
   }
   .mb-dot {
     color: var(--mb-muted);
     font-size: 0.7rem;
-  }
-  .mb-verified {
-    width: 1.02rem;
-    height: 1.02rem;
-    flex: none;
-    color: var(--mb-accent);
-  }
-  .mb-verified path:last-child {
-    fill: var(--main-bg);
   }
   .mb-pin {
     font-size: 0.7rem;
@@ -458,12 +482,12 @@ order: 0
 
 <div class="mb-feed">
   <p class="mb-lede">
-    共 <strong>{{ total }}</strong> 条短动态 · 推文长度的东西放这里：一个判断、一段代码、一张图。长文在
+    共 <strong>{{ total }}</strong> 条短动态 · 短内容放这里：一个判断、一段代码、一张图。长文在
     <a href="{{ '/' | relative_url }}">首页</a>。
   </p>
 
   <div class="mb-gate" id="mb-gate">
-    <button class="mb-lock" id="mb-unlock" type="button" title="博主入口：解锁后可在本页直接发动态">
+    <button class="mb-lock" id="mb-unlock" type="button" title="博主入口：登录后可在本页发动态、改动态">
       <i class="fas fa-lock" aria-hidden="true"></i> 博主入口
     </button>
   </div>
@@ -485,8 +509,8 @@ order: 0
     <p class="mb-img-name" id="mb-img-name" hidden></p>
     <p class="mb-status" id="mb-status" role="status"></p>
     <p class="mb-composer-foot">
-      <span>token 只存本机浏览器</span>
-      <a href="https://github.com/{{ repo }}/new/main/_posts" target="_blank" rel="noopener noreferrer">GitHub 网页写</a>
+      <span>已登录</span>
+      <button class="mb-linkbtn" id="mb-reset" type="button">更换 token / 密码</button>
       <button class="mb-linkbtn" id="mb-logout" type="button">退出</button>
     </p>
   </div>
@@ -505,7 +529,7 @@ order: 0
   {%- for post in feed_posts limit: 40 -%}
     {%- assign words = post.content | strip_html | number_of_words: 'auto' -%}
     {%- assign post_year = post.date | date: '%Y' -%}
-    <article class="mb-post">
+    <article class="mb-post" data-path="{{ post.path }}">
       <a class="mb-ava-link" href="{{ '/' | relative_url }}" tabindex="-1" aria-hidden="true">
         <span class="mb-ava" style="background-image: url('{{ avatar }}')"></span>
       </a>
@@ -513,14 +537,6 @@ order: 0
       <div class="mb-main">
         <header class="mb-meta">
           <span class="mb-name">{{ me }}</span>
-          <svg class="mb-verified" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path
-              fill="currentColor"
-              d="M12 1.6l2.5 2.4 3.5-.4.9 3.4 3.1 1.7-1.5 3.2 1.5 3.2-3.1 1.7-.9 3.4-3.5-.4L12 22.4l-2.5-2.4-3.5.4-.9-3.4L2 15.3l1.5-3.2L2 8.9l3.1-1.7.9-3.4 3.5.4z"
-            ></path>
-            <path fill="#fff" d="M10.7 15.6l-3-3 1.3-1.3 1.7 1.7 4.4-4.4 1.3 1.3z"></path>
-          </svg>
-          <span class="mb-handle">@{{ handle }}</span>
           <span class="mb-dot">·</span>
           <time class="mb-date" datetime="{{ post.date | date_to_xmlschema }}">
             {%- if post_year == current_year -%}
@@ -544,6 +560,7 @@ order: 0
             <a class="mb-tag" href="{{ tag_url | relative_url }}">#{{ tag }}</a>
           {%- endfor -%}
           <span class="mb-words"><i class="fas fa-i-cursor"></i>{{ words }} 字</span>
+          <button class="mb-linkbtn mb-edit" type="button" hidden>编辑</button>
           <a class="mb-more" href="{{ post.url | relative_url }}">查看原文 →</a>
         </footer>
       </div>
@@ -560,12 +577,20 @@ order: 0
 <script>
   (function () {
     var REPO = '{{ repo }}';
+    var VAULT_URL = '{{ "/assets/mb-vault.json" | relative_url }}';
+    var VAULT_PATH = 'assets/mb-vault.json';
     var KEY = 'mb_gh_token';
+    var ITER = 600000;
+    var MIN_PW = 12;
+    var enc = new TextEncoder();
+    var dec = new TextDecoder();
     function $(id) { return document.getElementById(id); }
+
     var token = null;
-    try { token = localStorage.getItem(KEY); } catch (e) {}
+    try { token = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); } catch (e) {}
     var imgFile = null;
 
+    /* ---------- 基础工具 ---------- */
     function api(path, opts) {
       opts = opts || {};
       opts.headers = Object.assign(
@@ -574,52 +599,204 @@ order: 0
       );
       return fetch('https://api.github.com' + path, opts);
     }
-    function b64utf8(s) {
-      var bytes = new TextEncoder().encode(s), bin = '';
-      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-      return btoa(bin);
-    }
-    function b64buf(buf) {
-      var bytes = new Uint8Array(buf), bin = '';
+    function bytesToB64(bytes) {
+      var bin = '';
       for (var i = 0; i < bytes.length; i += 0x8000) {
         bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       }
       return btoa(bin);
     }
-    function status(msg, cls) {
-      var el = $('mb-status');
-      el.textContent = msg;
-      el.className = 'mb-status' + (cls ? ' ' + cls : '');
+    function b64ToBytes(b64) {
+      var bin = atob(String(b64).replace(/\s+/g, ''));
+      var out = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
     }
+    function b64utf8(s) { return bytesToB64(enc.encode(s)); }
+    function encPath(p) { return p.split('/').map(encodeURIComponent).join('/'); }
     function pad(n) { return (n < 10 ? '0' : '') + n; }
     function yamlq(s) { return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; }
-
-    function unlockUI() {
-      var gate = $('mb-gate');
-      gate.innerHTML =
-        '<input type="password" id="mb-token" autocomplete="off" placeholder="粘贴 GitHub fine-grained token（只存本机浏览器）">' +
-        '<button class="mb-lock" id="mb-token-go" type="button">解锁</button>' +
-        '<p class="mb-status" id="mb-gate-err" role="status"></p>';
-      $('mb-token-go').addEventListener('click', doUnlock);
-      $('mb-token').addEventListener('keydown', function (e) { if (e.key === 'Enter') doUnlock(); });
-      $('mb-token').focus();
+    function setMsg(el, msg, cls) {
+      if (!el) return;
+      el.textContent = msg;
+      el.className = el.className.replace(/\s*\b(ok|err)\b/g, '') + (cls ? ' ' + cls : '');
     }
-    function doUnlock() {
-      var v = $('mb-token').value.trim();
-      if (!v) return;
-      token = v;
-      api('/repos/' + REPO).then(function (r) {
-        if (!r.ok) throw new Error(r.status);
-        try { localStorage.setItem(KEY, v); } catch (e) {}
-        $('mb-gate').hidden = true;
-        $('mb-composer').hidden = false;
-      }).catch(function (e) {
-        token = null;
-        $('mb-gate-err').textContent = 'token 无效或权限不足（HTTP ' + e.message + '）：需要对本仓库 Contents 读写权限';
-        $('mb-gate-err').className = 'mb-status err';
+    function status(msg, cls) { setMsg($('mb-status'), msg, cls); }
+    function gateMsg(msg, cls) { setMsg($('mb-gate-msg'), msg, cls); }
+
+    /* ---------- 密码库：用密码加密 token，密文放在站点上 ---------- */
+    function deriveKey(pw, salt, iter) {
+      return crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+        return crypto.subtle.deriveKey(
+          { name: 'PBKDF2', salt: salt, iterations: iter, hash: 'SHA-256' },
+          base,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
       });
     }
+    function seal(tok, pw) {
+      var salt = crypto.getRandomValues(new Uint8Array(16));
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      return deriveKey(pw, salt, ITER).then(function (k) {
+        return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, enc.encode(tok));
+      }).then(function (ct) {
+        return {
+          v: 1, kdf: 'PBKDF2-SHA256', iter: ITER,
+          salt: bytesToB64(salt), iv: bytesToB64(iv), ct: bytesToB64(new Uint8Array(ct))
+        };
+      });
+    }
+    function unseal(vault, pw) {
+      return deriveKey(pw, b64ToBytes(vault.salt), vault.iter).then(function (k) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(vault.iv) }, k, b64ToBytes(vault.ct));
+      }).then(function (buf) { return dec.decode(buf); });
+    }
+    function fetchVault() {
+      return fetch(VAULT_URL + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error('读取登录信息失败（HTTP ' + r.status + '）');
+        return r.json();
+      });
+    }
+    function checkToken(tok) {
+      return fetch('https://api.github.com/repos/' + REPO, {
+        headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' }
+      }).then(function (r) {
+        if (r.status === 401) throw new Error('TOKEN_DEAD');
+        if (!r.ok) throw new Error('GitHub 返回 HTTP ' + r.status + '：token 需要能访问 ' + REPO);
+      });
+    }
+    function saveToken(tok, remember) {
+      token = tok;
+      try {
+        localStorage.removeItem(KEY);
+        sessionStorage.removeItem(KEY);
+        (remember ? localStorage : sessionStorage).setItem(KEY, tok);
+      } catch (e) {}
+    }
+    function clearToken() {
+      token = null;
+      try { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); } catch (e) {}
+    }
 
+    /* ---------- 登录 / 设置 ---------- */
+    function showLogin() {
+      var gate = $('mb-gate');
+      gate.hidden = false;
+      gate.innerHTML =
+        '<input type="password" id="mb-pw" autocomplete="current-password" placeholder="博主密码">' +
+        '<label class="mb-remember"><input type="checkbox" id="mb-remember" checked> 这台设备保持登录</label>' +
+        '<button class="mb-lock" id="mb-login" type="button">登录</button>' +
+        '<button class="mb-linkbtn" id="mb-setup-link" type="button">首次设置 / 更换 token</button>' +
+        '<p class="mb-status" id="mb-gate-msg" role="status"></p>';
+      $('mb-login').addEventListener('click', doLogin);
+      $('mb-pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+      $('mb-setup-link').addEventListener('click', function () { showSetup(); });
+      $('mb-pw').focus();
+    }
+    function doLogin() {
+      var pw = $('mb-pw').value;
+      if (!pw) return;
+      var remember = $('mb-remember').checked;
+      var btn = $('mb-login');
+      btn.disabled = true;
+      gateMsg('验证中…');
+      fetchVault().then(function (vault) {
+        if (!vault) {
+          showSetup('还没有设置过密码：用 token 设置一次，之后各台设备都用密码登录。');
+          return null;
+        }
+        return unseal(vault, pw).catch(function () { throw new Error('密码不对'); });
+      }).then(function (tok) {
+        if (tok === null) return;
+        return checkToken(tok).then(function () {
+          saveToken(tok, remember);
+          enterComposer();
+        });
+      }).catch(function (e) {
+        var m = e && e.message === 'TOKEN_DEAD'
+          ? '密码正确，但保存的 token 已过期或被撤销：点「首次设置 / 更换 token」换个新 token，密码可以不变。'
+          : String((e && e.message) || e);
+        gateMsg(m, 'err');
+      }).finally(function () {
+        if ($('mb-login')) $('mb-login').disabled = false;
+      });
+    }
+    function showSetup(note) {
+      var gate = $('mb-gate');
+      $('mb-composer').hidden = true;
+      gate.hidden = false;
+      gate.innerHTML =
+        '<p class="mb-status mb-gate-note">' +
+        (note ? note + ' ' : '') +
+        '粘贴 GitHub fine-grained token，再设一个至少 ' + MIN_PW + ' 位的密码。token 会用密码加密后存到站点上，' +
+        '只有输对密码的浏览器才能解开它。</p>' +
+        '<input type="password" id="mb-tok" autocomplete="off" placeholder="GitHub token（github_pat_…）">' +
+        '<input type="password" id="mb-pw1" autocomplete="new-password" placeholder="设置密码（至少 ' + MIN_PW + ' 位）">' +
+        '<input type="password" id="mb-pw2" autocomplete="new-password" placeholder="再输一次密码">' +
+        '<button class="mb-lock" id="mb-setup-go" type="button">加密保存</button>' +
+        '<button class="mb-linkbtn" id="mb-back" type="button">返回登录</button>' +
+        '<p class="mb-status" id="mb-gate-msg" role="status"></p>';
+      $('mb-setup-go').addEventListener('click', doSetup);
+      $('mb-back').addEventListener('click', showLogin);
+      $('mb-tok').focus();
+    }
+    function doSetup() {
+      var tok = $('mb-tok').value.trim();
+      var p1 = $('mb-pw1').value;
+      var p2 = $('mb-pw2').value;
+      if (!tok) { gateMsg('先粘贴 token', 'err'); return; }
+      if (p1.length < MIN_PW) { gateMsg('密码至少 ' + MIN_PW + ' 位', 'err'); return; }
+      if (p1 !== p2) { gateMsg('两次密码不一致', 'err'); return; }
+      var btn = $('mb-setup-go');
+      btn.disabled = true;
+      gateMsg('验证 token…');
+      checkToken(tok).then(function () {
+        gateMsg('加密中…');
+        return seal(tok, p1);
+      }).then(function (vault) {
+        token = tok;
+        return api('/repos/' + REPO + '/contents/' + VAULT_PATH + '?ref=main').then(function (r) {
+          return r.ok ? r.json() : null;
+        }).then(function (cur) {
+          var body = {
+            message: 'chore: update owner login',
+            content: b64utf8(JSON.stringify(vault, null, 2) + '\n'),
+            branch: 'main'
+          };
+          if (cur && cur.sha) body.sha = cur.sha;
+          return api('/repos/' + REPO + '/contents/' + VAULT_PATH, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+        });
+      }).then(function (r) {
+        if (r.status === 401 || r.status === 403 || r.status === 404) {
+          throw new Error('token 没有本仓库的写权限（HTTP ' + r.status + '）：需要 Contents: Read and write');
+        }
+        if (!r.ok) throw new Error('保存失败（HTTP ' + r.status + '）');
+        saveToken(tok, true);
+        enterComposer();
+        status('密码已设置 ✓ 约 1-2 分钟后，其他设备就能用这个密码登录', 'ok');
+      }).catch(function (e) {
+        clearToken();
+        var m = e && e.message === 'TOKEN_DEAD' ? 'token 无效或已过期（HTTP 401）' : String((e && e.message) || e);
+        gateMsg(m, 'err');
+      }).finally(function () {
+        if ($('mb-setup-go')) $('mb-setup-go').disabled = false;
+      });
+    }
+    function enterComposer() {
+      $('mb-gate').hidden = true;
+      $('mb-composer').hidden = false;
+      var eds = document.querySelectorAll('.mb-edit');
+      for (var i = 0; i < eds.length; i++) eds[i].hidden = false;
+    }
+
+    /* ---------- 发一条 ---------- */
     function send() {
       var body = $('mb-body').value.replace(/\s+$/, '');
       if (!body.trim()) { status('正文不能为空', 'err'); return; }
@@ -647,10 +824,10 @@ order: 0
           return api('/repos/' + REPO + '/contents/assets/img/' + imgName, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: 'img: ' + imgName, content: b64buf(buf), branch: 'main' })
+            body: JSON.stringify({ message: 'img: ' + imgName, content: bytesToB64(new Uint8Array(buf)), branch: 'main' })
           });
         }).then(function (r) {
-          if (!r.ok) throw new Error('图片上传 HTTP ' + r.status);
+          if (!r.ok) throw new Error('图片上传失败（HTTP ' + r.status + '）');
           imgMd = '\n\n![配图](/assets/img/' + imgName + ')\n';
         });
       }
@@ -665,7 +842,7 @@ order: 0
           body: JSON.stringify({ message: 'post: ' + title, content: b64utf8(md), branch: 'main' })
         });
       }).then(function (r) {
-        if (r.status === 401 || r.status === 403) throw new Error('token 失效或权限不足（HTTP ' + r.status + '），点「退出」重新解锁');
+        if (r.status === 401 || r.status === 403) throw new Error('登录已失效或权限不足（HTTP ' + r.status + '），点「退出」后重新登录');
         if (!r.ok) throw new Error('HTTP ' + r.status);
         status('已提交 ✓ 构建约 1-2 分钟，刷新本页可见', 'ok');
         $('mb-body').value = '';
@@ -675,14 +852,80 @@ order: 0
         $('mb-img').value = '';
         $('mb-img-name').hidden = true;
       }).catch(function (e) {
-        status(String(e.message || e), 'err');
+        status(String((e && e.message) || e), 'err');
       }).finally(function () {
         btn.disabled = false;
       });
     }
 
-    $('mb-unlock').addEventListener('click', unlockUI);
+    /* ---------- 原地编辑一条 ---------- */
+    function startEdit(article) {
+      if (!article || article.querySelector('.mb-editor')) return;
+      var path = article.getAttribute('data-path');
+      var content = article.querySelector('.mb-content');
+      var box = document.createElement('div');
+      box.className = 'mb-editor';
+      box.innerHTML =
+        '<textarea class="mb-body-in" spellcheck="false"></textarea>' +
+        '<div class="mb-composer-row">' +
+        '<span class="mb-edit-path"></span>' +
+        '<button class="mb-linkbtn mb-edit-cancel" type="button">取消</button>' +
+        '<button class="mb-composer-btn mb-edit-save" type="button">保存</button>' +
+        '</div>' +
+        '<p class="mb-status mb-edit-status" role="status">读取中…</p>';
+      content.parentNode.insertBefore(box, content.nextSibling);
+      content.hidden = true;
+      var ta = box.querySelector('textarea');
+      var st = box.querySelector('.mb-edit-status');
+      var save = box.querySelector('.mb-edit-save');
+      var sha = null;
+      box.querySelector('.mb-edit-path').textContent = path;
+      save.disabled = true;
+
+      api('/repos/' + REPO + '/contents/' + encPath(path) + '?ref=main').then(function (r) {
+        if (r.status === 401 || r.status === 403) throw new Error('登录已失效（HTTP ' + r.status + '），点「退出」后重新登录');
+        if (!r.ok) throw new Error('读取失败（HTTP ' + r.status + '）');
+        return r.json();
+      }).then(function (f) {
+        sha = f.sha;
+        ta.value = dec.decode(b64ToBytes(f.content));
+        save.disabled = false;
+        setMsg(st, '改完点保存，约 1-2 分钟后生效');
+      }).catch(function (e) {
+        setMsg(st, String((e && e.message) || e), 'err');
+      });
+
+      box.querySelector('.mb-edit-cancel').addEventListener('click', function () {
+        box.parentNode.removeChild(box);
+        content.hidden = false;
+      });
+      save.addEventListener('click', function () {
+        save.disabled = true;
+        setMsg(st, '保存中…');
+        api('/repos/' + REPO + '/contents/' + encPath(path), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'edit: ' + path, content: b64utf8(ta.value), sha: sha, branch: 'main' })
+        }).then(function (r) {
+          if (r.status === 409) throw new Error('这条在别处被改过：点取消，再重新编辑');
+          if (r.status === 401 || r.status === 403) throw new Error('登录已失效或权限不足（HTTP ' + r.status + '）');
+          if (!r.ok) throw new Error('保存失败（HTTP ' + r.status + '）');
+          return r.json();
+        }).then(function (res) {
+          sha = res.content.sha;
+          setMsg(st, '已保存 ✓ 约 1-2 分钟后刷新可见', 'ok');
+        }).catch(function (e) {
+          setMsg(st, String((e && e.message) || e), 'err');
+        }).finally(function () {
+          save.disabled = false;
+        });
+      });
+    }
+
+    /* ---------- 绑定 ---------- */
+    $('mb-unlock').addEventListener('click', showLogin);
     $('mb-send').addEventListener('click', send);
+    $('mb-reset').addEventListener('click', function () { showSetup('更换 token 或密码：'); });
     $('mb-img').addEventListener('change', function () {
       imgFile = this.files[0] || null;
       var el = $('mb-img-name');
@@ -690,12 +933,13 @@ order: 0
       el.textContent = imgFile ? '已选图：' + imgFile.name + '（发布时一并上传）' : '';
     });
     $('mb-logout').addEventListener('click', function () {
-      try { localStorage.removeItem(KEY); } catch (e) {}
+      clearToken();
       location.reload();
     });
-    if (token) {
-      $('mb-gate').hidden = true;
-      $('mb-composer').hidden = false;
+    var eds = document.querySelectorAll('.mb-edit');
+    for (var i = 0; i < eds.length; i++) {
+      eds[i].addEventListener('click', function () { startEdit(this.closest('.mb-post')); });
     }
+    if (token) enterComposer();
   })();
 </script>

@@ -54,17 +54,30 @@ bundle exec jekyll s
 
 改 md 保存后自动重建，刷新浏览器即可。终端若报 `ruby: command not found`，开一个新终端再跑。
 
-## 页内发推（博主入口）
+## 页内发帖 / 改帖（博主入口，密码登录）
 
-`/blog/feed/` 右上角有个小锁「博主入口」。访客只看到只读流；你粘贴 GitHub fine-grained
-token 解锁后，出现发推框：写正文（Markdown）、填标签、可选配图，点「发」= 浏览器调
-GitHub API 往 `_posts/` 写一个 md，1-2 分钟后构建上线。
+`/blog/feed/` 右上角有个小锁「博主入口」。访客只看到只读流；你输入密码登录后：
 
-- token 只存你浏览器的 localStorage，网页代码里没有；点「退出」即清除
-- token 权限只给 `Wei-HCI/blog` 这一个仓库的 Contents 读写，带有效期，可在 GitHub 设置随时撤销
-- 没有 token 的人即使伪造请求也会被 GitHub 401 拒绝，写不进仓库
-- 建 token：github.com/settings/personal-access-tokens/new → Only select repositories
-  选 blog → Repository permissions → Contents: Read and write
+- 顶部出现发帖框：正文（Markdown）、标签、可选配图，点「发」→ 写进 `_posts/`，1-2 分钟后上线
+- 每条动态底部出现「编辑」：原地改这条的 Markdown（含 front matter），点「保存」
+
+### 第一次设置（只做一次）
+
+1. 建 token：github.com/settings/personal-access-tokens/new → Only select repositories
+   选 `blog` → Repository permissions → Contents: Read and write → 有效期选最长
+2. feed 页点「博主入口」→「首次设置 / 更换 token」→ 粘 token、设一个 ≥ 12 位的密码 →「加密保存」
+3. 1-2 分钟后，任何设备打开 feed 页，输密码就能登录
+
+### 原理与注意
+
+- token 用你的密码加密（PBKDF2 60 万轮 + AES-GCM）后存成 `assets/mb-vault.json`；
+  站点上只有密文，密码本身不存在任何地方
+- 密文是公开的，所以**密码要够长**：别用生日、常用密码；4 个随机词或 14 位以上最稳
+- 「这台设备保持登录」不勾 = 关掉标签页就退出（用别人电脑时别勾）
+- token 过期或撤销后：输对密码会提示「token 已过期」→ 点「更换 token / 密码」粘新 token，
+  密码可以照旧
+- 忘了密码：用新 token 重新走一遍「首次设置」即可，旧密文会被覆盖
+- 怀疑泄露：去 GitHub 设置撤销 token，立刻失效
 
 ## 容易踩的三件事
 
