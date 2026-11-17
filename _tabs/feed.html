@@ -222,6 +222,16 @@ order: 0
   .mb-linkbtn[hidden] {
     display: none;
   }
+  .mb-feed .mb-del:hover {
+    color: #e5534b;
+  }
+  .mb-post.mb-deleted {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .mb-post.mb-deleted .mb-del {
+    color: #e5534b;
+  }
   .mb-gate .mb-gate-note {
     text-align: left;
     font-size: 0.8rem;
@@ -561,6 +571,7 @@ order: 0
           {%- endfor -%}
           <span class="mb-words"><i class="fas fa-i-cursor"></i>{{ words }} 字</span>
           <button class="mb-linkbtn mb-edit" type="button" hidden>编辑</button>
+          <button class="mb-linkbtn mb-del" type="button" hidden>删除</button>
           <a class="mb-more" href="{{ post.url | relative_url }}">查看原文 →</a>
         </footer>
       </div>
@@ -792,7 +803,7 @@ order: 0
     function enterComposer() {
       $('mb-gate').hidden = true;
       $('mb-composer').hidden = false;
-      var eds = document.querySelectorAll('.mb-edit');
+      var eds = document.querySelectorAll('.mb-edit, .mb-del');
       for (var i = 0; i < eds.length; i++) eds[i].hidden = false;
     }
 
@@ -922,6 +933,42 @@ order: 0
       });
     }
 
+    /* ---------- 删除一条 ---------- */
+    function startDelete(article, btn) {
+      if (!article || btn.disabled) return;
+      var path = article.getAttribute('data-path');
+      var t = article.querySelector('.mb-ptitle');
+      var name = t ? t.textContent.trim() : path;
+      if (!window.confirm('确定删除「' + name + '」？\n\n1-2 分钟后从网站上消失。GitHub 的提交历史里仍保留记录，需要时可以找回。')) return;
+      btn.disabled = true;
+      btn.textContent = '删除中…';
+      api('/repos/' + REPO + '/contents/' + encPath(path) + '?ref=main').then(function (r) {
+        if (r.status === 404) throw new Error('GONE');
+        if (r.status === 401 || r.status === 403) throw new Error('登录已失效');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (f) {
+        return api('/repos/' + REPO + '/contents/' + encPath(path), {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'delete: ' + name, sha: f.sha, branch: 'main' })
+        });
+      }).then(function (r) {
+        if (r.status === 401 || r.status === 403) throw new Error('登录已失效或权限不足');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        article.className += ' mb-deleted';
+        btn.textContent = '已删除 ✓ 刷新后消失';
+      }).catch(function (e) {
+        if (e && e.message === 'GONE') {
+          article.className += ' mb-deleted';
+          btn.textContent = '已经删过了';
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = '删除失败（' + ((e && e.message) || e) + '），点此重试';
+      });
+    }
+
     /* ---------- 绑定 ---------- */
     $('mb-unlock').addEventListener('click', showLogin);
     $('mb-send').addEventListener('click', send);
@@ -939,6 +986,10 @@ order: 0
     var eds = document.querySelectorAll('.mb-edit');
     for (var i = 0; i < eds.length; i++) {
       eds[i].addEventListener('click', function () { startEdit(this.closest('.mb-post')); });
+    }
+    var dels = document.querySelectorAll('.mb-del');
+    for (var j = 0; j < dels.length; j++) {
+      dels[j].addEventListener('click', function () { startDelete(this.closest('.mb-post'), this); });
     }
     if (token) enterComposer();
   })();
