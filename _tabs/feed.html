@@ -850,7 +850,7 @@ order: 0
       }
       chain.then(function () {
         var md =
-          '---\ntitle: ' + yamlq(title) + '\ndate: ' + dateStr + '\ncategories: [动态]\ntags: [' +
+          '---\ntitle: ' + yamlq(title) + '\ndate: ' + dateStr + '\ntags: [' +
           tags.map(yamlq).join(', ') + ']\nmicroblog: true\npin: false\ntoc: false\ncomments: false\n---\n\n' +
           body + imgMd + '\n';
         return api('/repos/' + REPO + '/contents/_posts/' + slug + '.md', {
