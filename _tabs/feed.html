@@ -53,36 +53,172 @@ order: 0
     text-underline-offset: 0.16em;
   }
 
-  /* 写一条 —— 直接跳到 GitHub 新建文件 */
-  .mb-feed .mb-composer {
+  /* 博主入口：无 token 的访客只看到这把锁 */
+  .mb-gate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin: 0 0 0.6rem;
+  }
+  .mb-gate[hidden],
+  .mb-composer-box[hidden] {
+    display: none;
+  }
+  .mb-lock {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border: 1px solid var(--mb-line);
+    border-radius: 999px;
+    background: none;
+    color: var(--mb-muted);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .mb-lock:hover {
+    color: var(--mb-accent);
+    border-color: var(--mb-accent);
+  }
+  .mb-gate input[type='password'] {
+    flex: 1;
+    min-width: 12rem;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid var(--mb-line);
+    border-radius: 999px;
+    background: var(--card-bg, transparent);
+    color: var(--text-color);
+    font-size: 0.85rem;
+  }
+  .mb-gate .mb-status {
+    width: 100%;
+    margin: 0;
+    text-align: right;
+  }
+
+  /* 发推框（解锁后才显示） */
+  .mb-composer-box {
+    padding: 0.8rem 0.9rem;
+    border: 1px solid var(--mb-line);
+    border-radius: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .mb-composer-head {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.7rem 0.9rem;
-    border: 1px solid var(--mb-line) !important;
-    border-radius: 1rem;
-    transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+    gap: 0.7rem;
+    margin-bottom: 0.55rem;
   }
-  .mb-feed .mb-composer:hover {
-    border-color: var(--mb-accent) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgb(0 0 0 / 8%);
+  .mb-composer-box .mb-ava {
+    width: 38px;
+    height: 38px;
   }
-  .mb-composer-ph {
+  .mb-title-in,
+  .mb-body-in,
+  .mb-tags-in {
+    width: 100%;
+    border: 1px solid var(--mb-line);
+    border-radius: 0.6rem;
+    background: transparent;
+    color: var(--text-color);
+    font: inherit;
+    padding: 0.45rem 0.65rem;
+  }
+  .mb-title-in {
+    font-weight: 700;
+  }
+  .mb-body-in {
+    resize: vertical;
+    min-height: 5.2rem;
+    line-height: 1.6;
+    margin-bottom: 0.55rem;
+  }
+  .mb-composer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+  }
+  .mb-composer-row .mb-tags-in {
     flex: 1;
-    min-width: 0;
+    min-width: 8rem;
+    width: auto;
+  }
+  .mb-img-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.34rem 0.8rem;
+    border: 1px solid var(--mb-line);
+    border-radius: 999px;
     color: var(--mb-muted);
-    font-size: 0.98rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .mb-img-btn:hover {
+    color: var(--mb-accent);
+    border-color: var(--mb-accent);
   }
   .mb-composer-btn {
     flex: none;
     padding: 0.34rem 1.05rem;
+    border: none;
     border-radius: 999px;
     background: var(--mb-accent);
     color: var(--main-bg) !important;
     font-size: 0.85rem;
     font-weight: 700;
     letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+  .mb-composer-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+  .mb-img-name {
+    margin: 0.45rem 0 0;
+    font-size: 0.78rem;
+    color: var(--mb-muted);
+  }
+  .mb-status {
+    margin: 0.5rem 0 0;
+    font-size: 0.84rem;
+    color: var(--mb-muted);
+    min-height: 1.2em;
+  }
+  .mb-status.err {
+    color: #e5534b;
+  }
+  .mb-status.ok {
+    color: #3fb950;
+  }
+  .mb-composer-foot {
+    display: flex;
+    gap: 0.9rem;
+    margin: 0.55rem 0 0;
+    font-size: 0.75rem;
+    color: var(--mb-muted);
+  }
+  .mb-composer-foot a {
+    color: var(--mb-muted) !important;
+  }
+  .mb-composer-foot a:hover {
+    color: var(--mb-accent) !important;
+  }
+  .mb-linkbtn {
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--mb-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .mb-linkbtn:hover {
+    color: var(--mb-accent);
   }
 
   .mb-ava {
@@ -326,17 +462,34 @@ order: 0
     <a href="{{ '/' | relative_url }}">首页</a>。
   </p>
 
-  <a
-    class="mb-composer"
-    href="https://github.com/{{ repo }}/new/main/_posts"
-    target="_blank"
-    rel="noopener noreferrer"
-    aria-label="新建一条动态"
-  >
-    <span class="mb-ava" style="background-image: url('{{ avatar }}')" aria-hidden="true"></span>
-    <span class="mb-composer-ph">写一条动态…</span>
-    <span class="mb-composer-btn">写</span>
-  </a>
+  <div class="mb-gate" id="mb-gate">
+    <button class="mb-lock" id="mb-unlock" type="button" title="博主入口：解锁后可在本页直接发动态">
+      <i class="fas fa-lock" aria-hidden="true"></i> 博主入口
+    </button>
+  </div>
+
+  <div class="mb-composer-box" id="mb-composer" hidden>
+    <div class="mb-composer-head">
+      <span class="mb-ava" style="background-image: url('{{ avatar }}')" aria-hidden="true"></span>
+      <input class="mb-title-in" id="mb-title" type="text" maxlength="60" placeholder="标题：一句判断（留空取正文第一行）">
+    </div>
+    <textarea class="mb-body-in" id="mb-body" rows="4" placeholder="先说结论。支持 Markdown：代码块、链接、图…"></textarea>
+    <div class="mb-composer-row">
+      <input class="mb-tags-in" id="mb-tags" type="text" placeholder="标签，逗号分隔：agent, harness">
+      <label class="mb-img-btn">
+        <i class="fas fa-image" aria-hidden="true"></i> 配图
+        <input id="mb-img" type="file" accept="image/*" hidden>
+      </label>
+      <button class="mb-composer-btn" id="mb-send" type="button">发</button>
+    </div>
+    <p class="mb-img-name" id="mb-img-name" hidden></p>
+    <p class="mb-status" id="mb-status" role="status"></p>
+    <p class="mb-composer-foot">
+      <span>token 只存本机浏览器</span>
+      <a href="https://github.com/{{ repo }}/new/main/_posts" target="_blank" rel="noopener noreferrer">GitHub 网页写</a>
+      <button class="mb-linkbtn" id="mb-logout" type="button">退出</button>
+    </p>
+  </div>
 
   {%- if total == 0 -%}
     <div class="mb-empty">
@@ -403,3 +556,146 @@ order: 0
     </p>
   {%- endif -%}
 </div>
+
+<script>
+  (function () {
+    var REPO = '{{ repo }}';
+    var KEY = 'mb_gh_token';
+    function $(id) { return document.getElementById(id); }
+    var token = null;
+    try { token = localStorage.getItem(KEY); } catch (e) {}
+    var imgFile = null;
+
+    function api(path, opts) {
+      opts = opts || {};
+      opts.headers = Object.assign(
+        { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' },
+        opts.headers || {}
+      );
+      return fetch('https://api.github.com' + path, opts);
+    }
+    function b64utf8(s) {
+      var bytes = new TextEncoder().encode(s), bin = '';
+      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+    function b64buf(buf) {
+      var bytes = new Uint8Array(buf), bin = '';
+      for (var i = 0; i < bytes.length; i += 0x8000) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      }
+      return btoa(bin);
+    }
+    function status(msg, cls) {
+      var el = $('mb-status');
+      el.textContent = msg;
+      el.className = 'mb-status' + (cls ? ' ' + cls : '');
+    }
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function yamlq(s) { return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'; }
+
+    function unlockUI() {
+      var gate = $('mb-gate');
+      gate.innerHTML =
+        '<input type="password" id="mb-token" autocomplete="off" placeholder="粘贴 GitHub fine-grained token（只存本机浏览器）">' +
+        '<button class="mb-lock" id="mb-token-go" type="button">解锁</button>' +
+        '<p class="mb-status" id="mb-gate-err" role="status"></p>';
+      $('mb-token-go').addEventListener('click', doUnlock);
+      $('mb-token').addEventListener('keydown', function (e) { if (e.key === 'Enter') doUnlock(); });
+      $('mb-token').focus();
+    }
+    function doUnlock() {
+      var v = $('mb-token').value.trim();
+      if (!v) return;
+      token = v;
+      api('/repos/' + REPO).then(function (r) {
+        if (!r.ok) throw new Error(r.status);
+        try { localStorage.setItem(KEY, v); } catch (e) {}
+        $('mb-gate').hidden = true;
+        $('mb-composer').hidden = false;
+      }).catch(function (e) {
+        token = null;
+        $('mb-gate-err').textContent = 'token 无效或权限不足（HTTP ' + e.message + '）：需要对本仓库 Contents 读写权限';
+        $('mb-gate-err').className = 'mb-status err';
+      });
+    }
+
+    function send() {
+      var body = $('mb-body').value.replace(/\s+$/, '');
+      if (!body.trim()) { status('正文不能为空', 'err'); return; }
+      var firstLine = body.trim().split('\n')[0].replace(/[#>*`\-]/g, '').trim();
+      var title = $('mb-title').value.trim() || firstLine.slice(0, 40) || '动态';
+      var tags = $('mb-tags').value.split(/[,，]/).map(function (t) { return t.trim(); }).filter(Boolean).slice(0, 4);
+      var d = new Date();
+      var off = -d.getTimezoneOffset();
+      var sign = off >= 0 ? '+' : '-';
+      var dateStr =
+        d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+        pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + ' ' +
+        sign + pad(Math.floor(Math.abs(off) / 60)) + ':' + pad(Math.abs(off) % 60);
+      var slug = dateStr.slice(0, 10) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+      var btn = $('mb-send');
+      btn.disabled = true;
+      status('提交中…');
+
+      var chain = Promise.resolve();
+      var imgMd = '';
+      if (imgFile) {
+        var ext = (imgFile.name.match(/\.[a-z0-9]+$/i) || ['.png'])[0].toLowerCase();
+        var imgName = 'mb-' + slug + ext;
+        chain = imgFile.arrayBuffer().then(function (buf) {
+          return api('/repos/' + REPO + '/contents/assets/img/' + imgName, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: 'img: ' + imgName, content: b64buf(buf), branch: 'main' })
+          });
+        }).then(function (r) {
+          if (!r.ok) throw new Error('图片上传 HTTP ' + r.status);
+          imgMd = '\n\n![配图](/assets/img/' + imgName + ')\n';
+        });
+      }
+      chain.then(function () {
+        var md =
+          '---\ntitle: ' + yamlq(title) + '\ndate: ' + dateStr + '\ncategories: [动态]\ntags: [' +
+          tags.map(yamlq).join(', ') + ']\nmicroblog: true\npin: false\ntoc: false\ncomments: false\n---\n\n' +
+          body + imgMd + '\n';
+        return api('/repos/' + REPO + '/contents/_posts/' + slug + '.md', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'post: ' + title, content: b64utf8(md), branch: 'main' })
+        });
+      }).then(function (r) {
+        if (r.status === 401 || r.status === 403) throw new Error('token 失效或权限不足（HTTP ' + r.status + '），点「退出」重新解锁');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        status('已提交 ✓ 构建约 1-2 分钟，刷新本页可见', 'ok');
+        $('mb-body').value = '';
+        $('mb-title').value = '';
+        $('mb-tags').value = '';
+        imgFile = null;
+        $('mb-img').value = '';
+        $('mb-img-name').hidden = true;
+      }).catch(function (e) {
+        status(String(e.message || e), 'err');
+      }).finally(function () {
+        btn.disabled = false;
+      });
+    }
+
+    $('mb-unlock').addEventListener('click', unlockUI);
+    $('mb-send').addEventListener('click', send);
+    $('mb-img').addEventListener('change', function () {
+      imgFile = this.files[0] || null;
+      var el = $('mb-img-name');
+      el.hidden = !imgFile;
+      el.textContent = imgFile ? '已选图：' + imgFile.name + '（发布时一并上传）' : '';
+    });
+    $('mb-logout').addEventListener('click', function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    });
+    if (token) {
+      $('mb-gate').hidden = true;
+      $('mb-composer').hidden = false;
+    }
+  })();
+</script>

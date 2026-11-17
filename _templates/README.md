@@ -42,12 +42,29 @@
 删除 `_tabs/feed.html` 即可，侧边栏的「动态」会消失，文章不受影响。
 想改「写一条」按钮跳转的仓库，改 `_tabs/feed.html` 顶部的 `repo` 变量。
 
-## 本地预览
+## 本地预览（已装好）
 
-这台机器没装 Ruby，`bundle exec jekyll s` 跑不起来。两种办法：
+Ruby 3.4.12 + Devkit 装在 `C:\Ruby34-x64`（新开的终端已在 PATH 里），依赖已 `bundle install`
+（`.bundle/config` 跳过了 test 组，本地不装 html-proofer）。
 
-- 直接 push，看 GitHub Actions 的构建结果（最省事）
-- 想本地实时预览就装 Ruby 3.4 + `bundle install`，或 `docker run --rm -it -v "$PWD":/srv/jekyll -p 4000:4000 jekyll/jekyll jekyll s`
+```bash
+bundle exec jekyll s
+# 首页 http://127.0.0.1:4000/blog/   动态流 http://127.0.0.1:4000/blog/feed/
+```
+
+改 md 保存后自动重建，刷新浏览器即可。终端若报 `ruby: command not found`，开一个新终端再跑。
+
+## 页内发推（博主入口）
+
+`/blog/feed/` 右上角有个小锁「博主入口」。访客只看到只读流；你粘贴 GitHub fine-grained
+token 解锁后，出现发推框：写正文（Markdown）、填标签、可选配图，点「发」= 浏览器调
+GitHub API 往 `_posts/` 写一个 md，1-2 分钟后构建上线。
+
+- token 只存你浏览器的 localStorage，网页代码里没有；点「退出」即清除
+- token 权限只给 `Wei-HCI/blog` 这一个仓库的 Contents 读写，带有效期，可在 GitHub 设置随时撤销
+- 没有 token 的人即使伪造请求也会被 GitHub 401 拒绝，写不进仓库
+- 建 token：github.com/settings/personal-access-tokens/new → Only select repositories
+  选 blog → Repository permissions → Contents: Read and write
 
 ## 容易踩的三件事
 
