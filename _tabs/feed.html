@@ -1,0 +1,405 @@
+---
+title: 动态
+icon: fas fa-bolt
+order: 0
+---
+
+{%- comment -%}
+  动态（推特式信息流）
+  只收录 front matter 里写了 `microblog: true` 的帖子。
+  改 repo 为 "<GitHub 用户名>/<仓库名>"，右上角的「写一条」会跳到新建文件页。
+{%- endcomment -%}
+
+{%- assign repo = 'Wei-HCI/blog' -%}
+{%- assign feed_posts = site.posts | where_exp: 'p', 'p.microblog == true and p.hidden != true' -%}
+{%- assign total = feed_posts | size -%}
+{%- capture avatar -%}{% include media-url.html src=site.avatar %}{%- endcapture -%}
+{%- assign me = site.social.name | default: site.title -%}
+{%- assign handle = site.github.username | default: 'me' -%}
+
+<style>
+  .mb-feed {
+    --mb-line: var(--main-border-color, #2c2d2d);
+    --mb-muted: var(--text-muted-color, #868686);
+    --mb-accent: var(--link-color, #8ab4f8);
+    --mb-chip: var(--tag-border, #3b4f58);
+    margin-top: -0.6rem;
+    color: var(--text-color);
+  }
+
+  .mb-lede {
+    font-size: 0.86rem;
+    color: var(--mb-muted);
+    margin: 0 0 0.9rem;
+  }
+  .mb-lede strong {
+    color: var(--heading-color, var(--text-color));
+    font-weight: 700;
+  }
+  .mb-lede a {
+    color: var(--mb-accent) !important;
+    text-decoration: none !important;
+  }
+
+  /* Chirpy 给正文链接加了下划线边框，这里统一清掉，只保留自己的样式 */
+  .mb-feed a,
+  .mb-feed a:hover {
+    border-bottom: none !important;
+    text-decoration: none !important;
+  }
+  .mb-feed .mb-content a:hover,
+  .mb-feed .mb-more:hover {
+    text-decoration: underline !important;
+    text-underline-offset: 0.16em;
+  }
+
+  /* 写一条 —— 直接跳到 GitHub 新建文件 */
+  .mb-feed .mb-composer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--mb-line) !important;
+    border-radius: 1rem;
+    transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+  }
+  .mb-feed .mb-composer:hover {
+    border-color: var(--mb-accent) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 8%);
+  }
+  .mb-composer-ph {
+    flex: 1;
+    min-width: 0;
+    color: var(--mb-muted);
+    font-size: 0.98rem;
+  }
+  .mb-composer-btn {
+    flex: none;
+    padding: 0.34rem 1.05rem;
+    border-radius: 999px;
+    background: var(--mb-accent);
+    color: var(--main-bg) !important;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .mb-ava {
+    display: block;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid var(--main-bg);
+    background-color: var(--card-bg, #1e1e1e);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 0 1px var(--mb-line);
+  }
+  .mb-ava-link {
+    display: block;
+    width: 44px;
+    height: 44px;
+    flex: none;
+  }
+
+  /* 单条动态 */
+  .mb-post {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 0.78rem;
+    padding: 1.02rem 0.35rem 0.85rem;
+    margin: 0 -0.35rem;
+    border-radius: 0.6rem;
+    transition: background 0.15s;
+  }
+  .mb-post + .mb-post {
+    border-top: 1px solid var(--mb-line);
+  }
+  @supports (color: color-mix(in srgb, red, blue)) {
+    .mb-post + .mb-post {
+      border-top-color: color-mix(in srgb, var(--text-color) 14%, transparent);
+    }
+    .mb-post:hover {
+      background: color-mix(in srgb, var(--card-bg) 55%, transparent);
+    }
+  }
+
+  .mb-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.32rem;
+    line-height: 1.3;
+    font-size: 0.9rem;
+  }
+  .mb-name {
+    color: var(--heading-color, var(--text-color));
+    font-weight: 700;
+  }
+  .mb-handle,
+  .mb-date {
+    color: var(--mb-muted);
+  }
+  .mb-dot {
+    color: var(--mb-muted);
+    font-size: 0.7rem;
+  }
+  .mb-verified {
+    width: 1.02rem;
+    height: 1.02rem;
+    flex: none;
+    color: var(--mb-accent);
+  }
+  .mb-verified path:last-child {
+    fill: var(--main-bg);
+  }
+  .mb-pin {
+    font-size: 0.7rem;
+    padding: 0.02rem 0.42rem;
+    border-radius: 999px;
+    border: 1px solid var(--mb-chip);
+    color: var(--mb-muted);
+  }
+
+  .mb-ptitle {
+    display: block;
+    margin: 0.18rem 0 0.1rem;
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--heading-color, var(--text-color));
+  }
+  .mb-feed .mb-ptitle:hover {
+    color: var(--mb-accent) !important;
+  }
+
+  /* 正文：复用 Chirpy 的代码块 / 引用 / 表格样式 */
+  .mb-post .mb-content {
+    font-size: 1rem;
+    line-height: 1.68;
+    margin: 0.15rem 0 0.5rem;
+    overflow-wrap: break-word;
+  }
+  .mb-post .mb-content > :first-child {
+    margin-top: 0;
+  }
+  .mb-post .mb-content > :last-child {
+    margin-bottom: 0;
+  }
+  .mb-post .mb-content p {
+    margin: 0.5rem 0;
+  }
+  .mb-feed .mb-content a {
+    color: var(--mb-accent) !important;
+    text-decoration: none !important;
+  }
+  .mb-feed .mb-content a:hover {
+    text-decoration: underline !important;
+    text-underline-offset: 0.18em;
+  }
+  .mb-feed .mb-content img {
+    max-height: 430px;
+    object-fit: cover;
+    border-radius: 0.85rem;
+  }
+  .mb-feed .mb-content .img-link,
+  .mb-feed .mb-content a.popup {
+    display: block;
+    border-radius: 0.85rem;
+    overflow: hidden;
+    line-height: 0;
+  }
+  .mb-main {
+    min-width: 0;
+  }
+
+  .mb-feed .mb-content .highlight {
+    margin: 0.6rem 0;
+  }
+  .mb-feed .mb-content .highlight pre {
+    overflow-x: auto;
+  }
+  .mb-feed .mb-content h2,
+  .mb-feed .mb-content h3 {
+    font-size: 1.02rem;
+    margin: 0.7rem 0 0.3rem;
+    color: var(--heading-color, var(--text-color));
+  }
+
+  /* 底部：标签 + 字数 + 详情 */
+  .mb-foot {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--mb-muted);
+  }
+  .mb-feed .mb-tag {
+    padding: 0.05rem 0.5rem;
+    border: 1px solid var(--mb-chip) !important;
+    border-radius: 999px;
+    color: var(--mb-muted) !important;
+    transition: 0.15s;
+  }
+  .mb-feed .mb-tag:hover {
+    color: var(--mb-accent) !important;
+    border-color: var(--mb-accent) !important;
+  }
+  .mb-words {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+  }
+  .mb-more {
+    margin-left: auto;
+    color: var(--mb-accent) !important;
+    font-weight: 600;
+    text-decoration: none !important;
+    white-space: nowrap;
+  }
+  .mb-more:hover {
+    text-decoration: underline !important;
+  }
+
+  /* 空状态 */
+  .mb-empty {
+    margin-top: 1.2rem;
+    padding: 3rem 1.4rem;
+    text-align: center;
+    border: 1px dashed var(--mb-line);
+    border-radius: 1rem;
+  }
+  .mb-empty .mb-empty-ico {
+    color: var(--mb-accent);
+    opacity: 0.85;
+    margin-bottom: 0.6rem;
+  }
+  .mb-empty h2 {
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+    color: var(--heading-color, var(--text-color));
+  }
+  .mb-empty p {
+    font-size: 0.86rem;
+    color: var(--mb-muted);
+    margin: 0;
+  }
+  .mb-empty code {
+    font-size: 0.82rem;
+  }
+
+  .mb-older {
+    margin: 1.4rem 0 0.4rem;
+    text-align: center;
+    font-size: 0.86rem;
+  }
+  .mb-older a {
+    color: var(--mb-accent) !important;
+  }
+  .mb-older a:hover {
+    text-decoration: underline !important;
+  }
+
+  @media (max-width: 576px) {
+    .mb-post {
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 0.6rem;
+      padding: 0.9rem 0;
+      margin: 0;
+    }
+    .mb-ava,
+    .mb-ava-link {
+      width: 38px;
+      height: 38px;
+    }
+    .mb-post .mb-content {
+      font-size: 0.97rem;
+    }
+  }
+</style>
+
+<div class="mb-feed">
+  <p class="mb-lede">
+    共 <strong>{{ total }}</strong> 条短动态 · 推文长度的东西放这里：一个判断、一段代码、一张图。长文在
+    <a href="{{ '/' | relative_url }}">首页</a>。
+  </p>
+
+  <a
+    class="mb-composer"
+    href="https://github.com/{{ repo }}/new/main/_posts"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="新建一条动态"
+  >
+    <span class="mb-ava" style="background-image: url('{{ avatar }}')" aria-hidden="true"></span>
+    <span class="mb-composer-ph">写一条动态…</span>
+    <span class="mb-composer-btn">写</span>
+  </a>
+
+  {%- if total == 0 -%}
+    <div class="mb-empty">
+      <div class="mb-empty-ico"><i class="fas fa-bolt fa-2x"></i></div>
+      <h2>还没有动态</h2>
+      <p>
+        在 <code>_posts</code> 里新建一篇，front matter 加上 <code>microblog: true</code>，它就会出现在这里。
+      </p>
+    </div>
+  {%- endif -%}
+
+  {%- assign current_year = site.time | date: '%Y' -%}
+  {%- for post in feed_posts limit: 40 -%}
+    {%- assign words = post.content | strip_html | number_of_words: 'auto' -%}
+    {%- assign post_year = post.date | date: '%Y' -%}
+    <article class="mb-post">
+      <a class="mb-ava-link" href="{{ '/' | relative_url }}" tabindex="-1" aria-hidden="true">
+        <span class="mb-ava" style="background-image: url('{{ avatar }}')"></span>
+      </a>
+
+      <div class="mb-main">
+        <header class="mb-meta">
+          <span class="mb-name">{{ me }}</span>
+          <svg class="mb-verified" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              fill="currentColor"
+              d="M12 1.6l2.5 2.4 3.5-.4.9 3.4 3.1 1.7-1.5 3.2 1.5 3.2-3.1 1.7-.9 3.4-3.5-.4L12 22.4l-2.5-2.4-3.5.4-.9-3.4L2 15.3l1.5-3.2L2 8.9l3.1-1.7.9-3.4 3.5.4z"
+            ></path>
+            <path fill="#fff" d="M10.7 15.6l-3-3 1.3-1.3 1.7 1.7 4.4-4.4 1.3 1.3z"></path>
+          </svg>
+          <span class="mb-handle">@{{ handle }}</span>
+          <span class="mb-dot">·</span>
+          <time class="mb-date" datetime="{{ post.date | date_to_xmlschema }}">
+            {%- if post_year == current_year -%}
+              {{- post.date | date: '%-m月%-d日' -}}
+            {%- else -%}
+              {{- post.date | date: '%Y年%-m月%-d日' -}}
+            {%- endif -%}
+          </time>
+          {%- if post.pin -%}<span class="mb-pin">置顶</span>{%- endif -%}
+        </header>
+
+        {%- if post.title and post.title != '' -%}
+          <a class="mb-ptitle" href="{{ post.url | relative_url }}">{{ post.title }}</a>
+        {%- endif -%}
+
+        <div class="mb-content">{{ post.content }}</div>
+
+        <footer class="mb-foot">
+          {%- for tag in post.tags limit: 3 -%}
+            {%- assign tag_url = tag | slugify | url_encode | prepend: '/tags/' | append: '/' -%}
+            <a class="mb-tag" href="{{ tag_url | relative_url }}">#{{ tag }}</a>
+          {%- endfor -%}
+          <span class="mb-words"><i class="fas fa-i-cursor"></i>{{ words }} 字</span>
+          <a class="mb-more" href="{{ post.url | relative_url }}">查看原文 →</a>
+        </footer>
+      </div>
+    </article>
+  {%- endfor -%}
+
+  {%- if total > 40 -%}
+    <p class="mb-older">
+      <a href="{{ '/archives/' | relative_url }}">更早的 {{ total | minus: 40 }} 条在归档里 →</a>
+    </p>
+  {%- endif -%}
+</div>

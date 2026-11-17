@@ -1,12 +1,13 @@
 ---
-title: 你好，世界
+title: 先把博客跑通，再谈写什么
 date: 2026-11-13 09:00:00 +0800
 categories: [随笔]
 tags: [开始]
 pin: true
+microblog: true
 ---
 
-欢迎来到我的博客。这里基于 [Chirpy](https://github.com/cotes2020/jekyll-theme-chirpy) 主题搭建，托管在 GitHub Pages 上。
+博客已经跑通：[Chirpy](https://github.com/cotes2020/jekyll-theme-chirpy) 主题 + GitHub Pages，push 上去一两分钟就上线。
 
 ## 接下来
 
