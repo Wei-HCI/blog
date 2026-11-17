@@ -222,6 +222,12 @@ order: 0
   .mb-linkbtn[hidden] {
     display: none;
   }
+  .mb-post .mb-content.mb-pending {
+    white-space: pre-wrap;
+  }
+  .mb-saved-note {
+    margin: 0 0 0.4rem;
+  }
   .mb-feed .mb-del:hover {
     color: #e5534b;
   }
@@ -870,8 +876,17 @@ order: 0
     }
 
     /* ---------- 原地编辑一条 ---------- */
+    function splitFm(md) {
+      var m = md.match(/^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)([\s\S]*)$/);
+      if (!m) return { title: '', body: md };
+      var t = m[1].match(/^title:[ \t]*(.*)$/m);
+      var title = t ? t[1].trim().replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1').replace(/\\"/g, '"') : '';
+      return { title: title, body: m[2] };
+    }
     function startEdit(article) {
       if (!article || article.querySelector('.mb-editor')) return;
+      var oldNote = article.querySelector('.mb-saved-note');
+      if (oldNote) oldNote.parentNode.removeChild(oldNote);
       var path = article.getAttribute('data-path');
       var content = article.querySelector('.mb-content');
       var box = document.createElement('div');
@@ -922,9 +937,18 @@ order: 0
           if (r.status === 401 || r.status === 403) throw new Error('登录已失效或权限不足（HTTP ' + r.status + '）');
           if (!r.ok) throw new Error('保存失败（HTTP ' + r.status + '）');
           return r.json();
-        }).then(function (res) {
-          sha = res.content.sha;
-          setMsg(st, '已保存 ✓ 约 1-2 分钟后刷新可见', 'ok');
+        }).then(function () {
+          var parsed = splitFm(ta.value);
+          var t = article.querySelector('.mb-ptitle');
+          if (t && parsed.title) t.textContent = parsed.title;
+          content.textContent = parsed.body.replace(/^\s+|\s+$/g, '');
+          if (content.className.indexOf('mb-pending') < 0) content.className += ' mb-pending';
+          box.parentNode.removeChild(box);
+          content.hidden = false;
+          var note = document.createElement('p');
+          note.className = 'mb-status ok mb-saved-note';
+          note.textContent = '已保存 ✓ 上面是新内容预览，约 1-2 分钟后刷新显示正式排版';
+          content.parentNode.insertBefore(note, content.nextSibling);
         }).catch(function (e) {
           setMsg(st, String((e && e.message) || e), 'err');
         }).finally(function () {
